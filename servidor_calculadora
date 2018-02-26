@@ -1,0 +1,53 @@
+#!/usr/bin/python3
+# -*- coding: utf-8 -*-
+
+"""
+Simple HTTP Server
+Jesus M. Gonzalez-Barahona and Gregorio Robles
+{jgb, grex} @ gsyc.es
+SAT and SARO subjects (Universidad Rey Juan Carlos)
+"""
+
+import socket
+import random
+import calculadora
+
+# Create a TCP objet socket and bind it to a port
+# We bind to 'localhost', therefore only accepts connections from the
+# same machine
+# Port should be 80, but since it needs root privileges,
+# let's use one above 1024
+
+# Reserva un puerto para el servidor
+mySocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Libera el puerto una ve que hemos terminado el programa.
+mySocket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# Ata el servidor al puerto
+mySocket.bind(('localhost', 1234))
+
+# Queue a maximum of 5 TCP connection requests
+mySocket.listen(5)
+
+# Accept connections, read incoming data, and answer back an HTML page
+#  (in an infinite loop)
+try:
+    while True:
+        print('Waiting for connections')
+        (recvSocket, address) = mySocket.accept()
+        print('Request received:')
+        recibido = (recvSocket.recv(2048))
+        request = str(recibido, 'utf-8')
+        resource = request.split()[1]
+        _,op1,operacion,op2 = resource.split('/')
+        print(op1,operacion,op2)
+        print('Answering back...')
+        respuesta = op1 + ' ' + operacion + ' ' + op2 + ' = '
+        respuesta =respuesta + calculadora.calculate(op1, operacion, op2)
+
+        resp = '<html><head><title>Servidor calculadora</title></head><body>' + respuesta + '<p></body></html>\r\n'
+        recvSocket.send(bytes('HTTP/1.1 200 OK\r\n\r\n' + resp, 'utf-8'))
+        recvSocket.close()
+
+except KeyboardInterrupt:
+    print("Closing binded socket")
+    mySocket.close()
